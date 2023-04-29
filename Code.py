@@ -260,8 +260,146 @@ def Q1_2_3():
             sys.stdout.write(getShiftName(rs3[i][j]) + " ")
         print()
 
+def solveQ4(csr_name, plan_name, week_name, days_off_week_plan, days_off):
+    try:
+        I = len(csr_name)
+        W = len(week_name)
+        L = len(plan_name)
+
+        problem = cplex.Cplex()
+        problem.objective.set_sense(problem.objective.sense.minimize)
+        obj_coefficients = [1] * I * W * L
+        var_names = [csr_name[i] + "_" + week_name[w] + "_" + plan_name[l] for i in range(I) for w in range(W) for l in range(L)]
+        var_types = ["B"] * I * W * L
+        problem.variables.add(obj = obj_coefficients, names = var_names, types = var_types)
+        
+        #Constraint 1:
+        rows = [[[var_names[l + w * L + i * L * W] for l in range(L)], 
+                [1] * L] 
+                    for w in range(W) 
+                        for i in range(I)]
+        rhs = [1] * I * W
+        senses = ["E"] * I * W
+        constraint_names = ["Con1_" + csr_name[i] + "_" + week_name[w] for i in range(I) for w in range(W)]
+        problem.linear_constraints.add(lin_expr = rows, senses = senses, rhs = rhs, names = constraint_names)
+
+        #Constraint 2:
+        rows = [[[var_names[l + w * L + i * L * W] for i in range(I)], 
+                [1] * I] 
+                    for l in range(L)
+                        for w in range(W) ]
+        rhs = [1] * L * W
+        senses = ["E"] * L * W
+        constraint_names = ["Con2_" + plan_name[l] + "_" + week_name[w] for l in range(L) for w in range(W)]
+        problem.linear_constraints.add(lin_expr = rows, senses = senses, rhs = rhs, names = constraint_names)
+
+        #Constraint 3_1:
+        rows = [[[var_names[l + w * L + i * L * W] for w in range(W) for l in range(L)], 
+                [days_off_week_plan[w][l] for w in range(W) for l in range(L)]] 
+                        for i in range(I)]
+        rhs = [math.ceil(days_off / I) for i in range(I)]
+        senses = ["L"] * I
+        constraint_names = ["Con2_1_" + csr_name[i] for i in range(I)]
+        problem.linear_constraints.add(lin_expr = rows, senses = senses, rhs = rhs, names = constraint_names)
+
+        #Constraint 3_2:
+        rows = [[[var_names[l + w * L + i * L * W] for w in range(W) for l in range(L)], 
+                [days_off_week_plan[w][l] for w in range(W) for l in range(L)]] 
+                        for i in range(I)]
+        rhs = [math.floor(days_off / I) for i in range(I)]
+        senses = ["G"] * I
+        constraint_names = ["Con2_2_" + csr_name[i] for i in range(I)]
+        problem.linear_constraints.add(lin_expr = rows, senses = senses, rhs = rhs, names = constraint_names)
+
+        problem.solve()
+        x = problem.solution.get_values()
+        return [[[int(x[l + w * L + i * L * W]) for l in range(L)] for w in range(W)] for i in range(I)]
+    
+    except CplexError as e:
+        print(e)
+
+def Q4():
+    days = [[[6, 9, 9, 8, 3, 3, 7, 8, 8, 5, 3, 3, 2], #Monday
+        [6, 10, 7, 7,3, 4, 7, 5, 9, 5, 3, 4, 3], #Tuesday
+        [7, 9, 9, 6, 3, 4, 6, 8, 7, 4, 3, 3, 3], #Wednesday
+        [6, 9, 8, 6, 4, 4, 5, 8, 7, 5, 4, 3, 4], #Thursday
+        [6, 7, 8, 7, 3, 5, 6, 7, 6, 5, 3, 3, 3], #Friday
+        [6, 9, 9, 4, 3, 3, 4, 5, 5, 5, 3, 3, 2], #Saturday
+        [5, 7, 6, 5, 4, 3, 4, 5, 6, 5, 3, 3, 3]], #Sunday
+
+        [[6, 9, 9, 8, 3, 3, 7, 8, 8, 5, 3, 3, 2],
+        [6, 10, 7, 7,3, 4, 7, 5, 9, 5, 3, 4, 3],
+        [7, 9, 9, 6, 3, 4, 6, 8, 7, 4, 3, 3, 3], 
+        [6, 9, 8, 6, 4, 4, 5, 8, 7, 5, 4, 3, 4], 
+        [6, 7, 8, 7, 3, 5, 6, 7, 6, 5, 3, 3, 3],
+        [6, 9, 9, 4, 3, 3, 4, 5, 5, 5, 3, 3, 2], 
+        [5, 7, 6, 5, 4, 3, 4, 5, 6, 5, 3, 3, 3]],
+
+        [[6, 9, 9, 8, 3, 3, 7, 8, 8, 5, 3, 3, 2], 
+        [6, 10, 7, 7,3, 4, 7, 5, 9, 5, 3, 4, 3], 
+        [7, 9, 9, 6, 3, 4, 6, 8, 7, 4, 3, 3, 3],
+        [6, 9, 8, 6, 4, 4, 5, 8, 7, 5, 4, 3, 4], 
+        [6, 7, 8, 7, 3, 5, 6, 7, 6, 5, 3, 3, 3], 
+        [6, 9, 9, 4, 3, 3, 4, 5, 5, 5, 3, 3, 2], 
+        [5, 7, 6, 5, 4, 3, 4, 5, 6, 5, 3, 3, 3]],
+
+        [[6, 9, 9, 8, 3, 3, 7, 8, 8, 5, 3, 3, 2], 
+        [6, 10, 7, 7,3, 4, 7, 5, 9, 5, 3, 4, 3], 
+        [7, 9, 9, 6, 3, 4, 6, 8, 7, 4, 3, 3, 3], 
+        [6, 9, 8, 6, 4, 4, 5, 8, 7, 5, 4, 3, 4], 
+        [6, 7, 8, 7, 3, 5, 6, 7, 6, 5, 3, 3, 3], 
+        [6, 9, 9, 4, 3, 3, 4, 5, 5, 5, 3, 3, 2],
+        [5, 7, 6, 5, 4, 3, 4, 5, 6, 5, 3, 3, 3]]]
+    week_name = ["Week1", "Week2", "Week3", "Week4"]
+    days_name = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    hour_name = ["8h-9h", "9h-10h", "10h-11h", "11h-12h", "12h-13h", "13h-14h", "14h-15h", "15h-16h", "16h-17h", "17h-18h", "18h-19h", "19h-20h", "20h-21h"]
+    shifts = [[1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0], #C1
+        [0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0], #C2
+        [0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0], #C3
+        [0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0], #C4
+        [0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1], #C5
+        [1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1]] #C6
+    shift_name = ["C1", "C2", "C3", "C4", "C5", "C6"]
+
+    rs1 = [[solveQ1(day = days[w][i], shift_name=shift_name, shifts=shifts, hour_name=hour_name) for i in range(len(days_name))] for w in range(len(week_name))]
+    # Number of CSR required each day (ncwj, w = 1, 2, ..., 4, j = 1, 2, ..., 7)
+    csr_required_each_day = [[sum([rs1[w][j][k] for k in range(len(shift_name))]) for j in range(len(days_name))] for w in range(len(week_name))]
+    # Number of empty slots each week (new, w = 1, 2, ..., 4)
+    empty_slots = [len(days_name) * max(csr_required_each_day[w]) - sum(csr_required_each_day[w]) for w in range(len(week_name))]
+    rs2 = [solveQ2(shift_name=shift_name, days_name=days_name, empty_slots=empty_slots[w], csr_required_each_day=csr_required_each_day[w]) for w in range(len(week_name))]
+
+    # Number of CSR required each shift each week (ncwk, w = 1, 2, ... 4, k = 1, 2, ..., 6)
+    csr_required_each_shift = [[sum([rs1[w][j][k] for j in range(len(days_name))]) for k in range(len(shift_name))] for w in range(len(week_name))]
+    # Number of CSR required in a week nc
+    csr_required = max([rs2[w] + max(csr_required_each_day[w]) for w in range(len(week_name))])
+    # CSR names (CSR1, CSR2, ..., CSRnc)
+    csr_name = ["CSR" + str(i + 1) for i in range(0, csr_required)]
+    rs3 = [solveQ3(shift_name=shift_name, shifts=shifts, hour_name=hour_name, csr_name=csr_name, days=days[w], days_name=days_name, csr_required=csr_required, csr_required_each_shift=csr_required_each_shift[w]) for w in range(len(week_name))]
+    
+    days_off_week_plan = [[1 - sum([rs3[w][i][6][k] for k in range(len(shift_name))]) for i in range(len(csr_name))] for w in range(len(week_name))]
+    # Number of days off in all week
+    days_off = sum(sum(days_off_week_plan[w]) for w in range(len(week_name)))
+
+    plan_name = ["Plan" + str(i + 1) for i in range(0, len(csr_name))]
+    rs4 = solveQ4(csr_name=csr_name, week_name=week_name, plan_name=plan_name, days_off_week_plan=days_off_week_plan, days_off=days_off)
+
+    def getPlanName(arr):
+        for i in range(len(arr)):
+            if arr[i] == 1:
+                return plan_name[i]
+        return "EM"
+    
+    print("Result Q4: ")
+    for w in range(len(week_name)):
+        print(week_name[w])
+        for i in range(len(csr_name)):
+            print(csr_name[i] + " " + getPlanName(rs4[i][w]) + " ")
+        print()
+
+
 if __name__ == "__main__":
     Q1_2_3()
+    Q4()
     
     
 
