@@ -260,7 +260,7 @@ def Q1_2_3():
             sys.stdout.write(getShiftName(rs3[i][j]) + " ")
         print()
 
-def solveQ4(csr_name, plan_name, week_name, days_off_week_plan, days_off):
+def solveQ4_2(csr_name, plan_name, week_name, days_off_week_plan, days_off):
     try:
         I = len(csr_name)
         W = len(week_name)
@@ -318,7 +318,7 @@ def solveQ4(csr_name, plan_name, week_name, days_off_week_plan, days_off):
     except CplexError as e:
         print(e)
 
-def Q4():
+def Q4_2():
     days = [[[6, 9, 9, 8, 3, 3, 7, 8, 8, 5, 3, 3, 2], #Monday
         [6, 10, 7, 7,3, 4, 7, 5, 9, 5, 3, 4, 3], #Tuesday
         [7, 9, 9, 6, 3, 4, 6, 8, 7, 4, 3, 3, 3], #Wednesday
@@ -381,7 +381,7 @@ def Q4():
     days_off = sum(sum(days_off_week_plan[w]) for w in range(len(week_name)))
 
     plan_name = ["Plan" + str(i + 1) for i in range(0, len(csr_name))]
-    rs4 = solveQ4(csr_name=csr_name, week_name=week_name, plan_name=plan_name, days_off_week_plan=days_off_week_plan, days_off=days_off)
+    rs4 = solveQ4_2(csr_name=csr_name, week_name=week_name, plan_name=plan_name, days_off_week_plan=days_off_week_plan, days_off=days_off)
 
     def getPlanName(arr):
         for i in range(len(arr)):
@@ -399,7 +399,7 @@ def Q4():
 
 if __name__ == "__main__":
     Q1_2_3()
-    Q4()
+    Q4_2()
     
     
 
