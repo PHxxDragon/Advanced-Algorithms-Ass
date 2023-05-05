@@ -470,8 +470,8 @@ def solveQ4_2(csr_name, plan_name, week_name, days_off_week_plan, days_off):
         #Constraint 1:
         rows = [[[var_names[l + w * L + i * L * W] for l in range(L)], 
                 [1] * L] 
-                    for w in range(W) 
-                        for i in range(I)]
+                    for i in range(I)
+                        for w in range(W)]
         rhs = [1] * I * W
         senses = ["E"] * I * W
         constraint_names = ["Con1_" + csr_name[i] + "_" + week_name[w] for i in range(I) for w in range(W)]
@@ -480,11 +480,11 @@ def solveQ4_2(csr_name, plan_name, week_name, days_off_week_plan, days_off):
         #Constraint 2:
         rows = [[[var_names[l + w * L + i * L * W] for i in range(I)], 
                 [1] * I] 
-                    for l in range(L)
-                        for w in range(W) ]
+                    for w in range(W)
+                        for l in range(L)]
         rhs = [1] * L * W
         senses = ["E"] * L * W
-        constraint_names = ["Con2_" + plan_name[l] + "_" + week_name[w] for l in range(L) for w in range(W)]
+        constraint_names = ["Con2_" + plan_name[l] + "_" + week_name[w] for w in range(W) for l in range(L)]
         problem.linear_constraints.add(lin_expr = rows, senses = senses, rhs = rhs, names = constraint_names)
 
         #Constraint 3_1:
@@ -583,6 +583,12 @@ def Q4_2():
                 return plan_name[i]
         return "EM"
     
+    def getPlanIndex(arr):
+        for i in range(len(arr)):
+            if arr[i] == 1:
+                return i
+        return -1
+    
     def getShiftName(arr):
         for i in range(len(arr)):
             if arr[i] == 1:
@@ -597,7 +603,7 @@ def Q4_2():
     for w in range(len(week_name)):
         print(week_name[w])
         for i in range(len(csr_name)):
-            print(csr_name[i] + " " + getPlanName(rs4[i][w]) + " " + getPlanContent(rs3[w][i]))
+            print(csr_name[i] + " " + getPlanName(rs4[i][w]) + " " + getPlanContent(rs3[w][getPlanIndex(rs4[i][w])]))
         print()
 
 
